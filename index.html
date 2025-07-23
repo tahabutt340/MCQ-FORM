@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MCQ Test</title>
+</head>
+<body>
+  <h2>MCQ Test</h2>
+
+  <form id="mcqForm">
+    <input type="text" name="name" placeholder="Your Name" required><br><br>
+
+    Q1: What is 2 + 2?<br>
+    <input type="radio" name="q1" value="3"> 3<br>
+    <input type="radio" name="q1" value="4"> 4<br>
+    <input type="radio" name="q1" value="5"> 5<br><br>
+
+    Q2: What is the capital of France?<br>
+    <input type="radio" name="q2" value="Paris"> Paris<br>
+    <input type="radio" name="q2" value="London"> London<br>
+    <input type="radio" name="q2" value="Rome"> Rome<br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    document.getElementById('mcqForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(e.target);
+      const data = {
+        name: formData.get('name'),
+        q1: formData.get('q1'),
+        q2: formData.get('q2')
+      };
+
+      fetch('https://script.google.com/macros/s/AKfycbzFYeh2YIJlQnFe3H57G3fMVtdoH8aEJ71kCpIvrhEgX8c6IStYeo_gQE2pEQpV8w0zPA/exec', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.text())
+      .then(response => {
+        alert('Form submitted successfully!');
+      })
+      .catch(err => {
+        alert('Error: ' + err.message);
+        console.error(err);
+      });
+    });
+  </script>
+</body>
+</html>
