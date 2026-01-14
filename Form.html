@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>PACS Issue Form</title>
+  <style>
+    body { font-family: "Segoe UI", Arial, sans-serif; background: #eef2f6; padding: 30px; }
+    .container { position: relative; background: #fff; max-width: 720px; margin: auto; padding: 30px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); overflow: hidden; }
+    .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-25deg); font-size: 48px; color: rgba(25, 118, 210, 0.07); font-weight: 700; pointer-events: none; user-select: none; white-space: nowrap; }
+    .header { text-align: center; border-bottom: 2px solid #1976d2; padding-bottom: 15px; margin-bottom: 25px; }
+    .header h1 { margin: 0; color: #1976d2; font-size: 24px; }
+    .header p { margin-top: 5px; color: #555; font-size: 14px; }
+    label { font-weight: 600; margin-top: 15px; display: block; color: #333; }
+    input, textarea, select { width: 100%; padding: 10px; margin-top: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; background: #fff; }
+    textarea { resize: vertical; }
+    button { margin-top: 25px; width: 100%; padding: 12px; background: #1976d2; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #125aa0; }
+    .footer-note { text-align: center; margin-top: 20px; font-size: 12px; color: #888; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="watermark">Allied Bank Limited</div>
+  <div class="header">
+    <h1>Allied Bank Limited</h1>
+    <p>Issue Reporting & Tracking Form</p>
+  </div>
+
+  <form id="issueForm">
+    <label>Application</label>
+    <input type="text" name="application" required>
+
+    <label>Category</label>
+    <input type="text" name="category" required>
+
+    <label>Issue Description</label>
+    <textarea name="issueDescription" rows="3" required></textarea>
+
+    <label>Email Subject</label>
+    <input type="text" name="emailSubject">
+
+    <label>Reported Date</label>
+    <input type="date" name="reportedDate" id="reportedDate" required>
+
+    <label>Reported To</label>
+    <input type="text" name="reportedTo">
+
+    <label>Response Date</label>
+    <input type="date" name="responseDate">
+
+    <label>Responded By</label>
+    <input type="text" name="respondedBy">
+
+    <label>Response</label>
+    <textarea name="response" rows="3"></textarea>
+
+    <label>Current Status</label>
+    <select name="currentStatus" required>
+      <option value="">Select Status</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Fixed">Fixed</option>
+    </select>
+
+    <button type="submit">Submit Issue</button>
+  </form>
+
+  <div class="footer-note">© Allied Bank Limited – Internal Use Only</div>
+</div>
+
+<script>
+  // Auto-fill Reported Date
+  document.getElementById('reportedDate').value = new Date().toISOString().split('T')[0];
+
+  document.getElementById("issueForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(this).entries());
+
+    // 🔴 Replace this URL with your deployed Apps Script /exec URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmGyOO6E6Q2pe2V9eMZp1IqQcsSuYP48i2qbXE-v9aM_BjZz_n9lTiPHTVVdPzb-k_EQ/exec";
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData)
+    })
+    .then(res => res.text())
+    .then(data => {
+      alert(data);  // shows Success or Error
+      if(data === "Success") this.reset();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Error submitting form. Check console.");
+    });
+  });
+</script>
+</body>
+</html>
