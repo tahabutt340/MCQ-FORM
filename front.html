@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MCQ Responses Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Roboto', sans-serif; background: linear-gradient(to right, #f0f4f8, #d9e2ec); margin: 0; padding: 20px; }
+    h2 { text-align: center; color: #2c3e50; font-size: 28px; margin-bottom: 15px; }
+    .controls { max-width: 1000px; margin: 0 auto 20px auto; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
+    .controls button { padding: 10px 12px; font-size: 14px; border-radius: 6px; border: none; background-color: #3498db; color: white; cursor: pointer; transition: 0.3s; }
+    .controls button:hover { background-color: #2980b9; }
+    .search-container { max-width: 600px; margin: 0 auto 15px auto; text-align: center; }
+    .search-container input { width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #3498db; border-radius: 8px; outline: none; transition: 0.3s; }
+    .search-container input:focus { border-color: #2980b9; box-shadow: 0 0 6px rgba(41,128,185,0.3); }
+    .table-container { overflow-x: auto; max-width: 100%; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); min-width: 600px; }
+    thead th { background-color: #3498db; color: white; padding: 14px 16px; position: sticky; top: 0; z-index: 10; font-size: 15px; text-align: left; }
+    tbody td { padding: 12px 16px; border-bottom: 1px solid #eee; font-size: 14px; color: #2c3e50; vertical-align: top; }
+    tr:hover { background-color: #f9f9f9; }
+    .no-results { text-align: center; color: #e74c3c; padding: 20px; font-size: 16px; }
+    .pagination { margin-top: 20px; text-align: center; }
+    .pagination button { background-color: #3498db; color: white; border: none; padding: 10px 16px; margin: 0 5px; font-size: 14px; border-radius: 6px; cursor: pointer; transition: background-color 0.3s ease; }
+    .pagination button:disabled { background-color: #ccc; cursor: default; }
+    .pagination button:hover:not(:disabled) { background-color: #2980b9; }
+    .details-row td { background-color: #f1f1f1; padding: 10px; }
+    .details-columns { display: flex; gap: 20px; flex-wrap: wrap; }
+    .details-column { flex: 1; min-width: 150px; }
+    .details-column div { margin-bottom: 5px; font-size: 13px; }
+    .details-column div span { font-weight: bold; color: #2980b9; }
+    .mcq-key { max-width: 1000px; margin: 10px auto 20px auto; padding: 15px; background: #fff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display:none; }
+    .mcq-key h3 { margin-bottom: 10px; color: #2c3e50; }
+    .mcq-key div { margin-bottom: 5px; font-size: 13px; }
+    .mcq-key div span { font-weight: bold; color: #2980b9; }
+    @media (max-width: 480px) { .details-columns { flex-direction: column; gap: 10px; } }
+  </style>
+</head>
+<body>
+
+<h2>MCQ Responses Summary</h2>
+
+<div class="controls">
+  <button id="showMCQBtn">Show MCQs & Answer Key</button>
+</div>
+
+<div class="mcq-key" id="mcqKeyContainer"></div>
+
+<div class="search-container">
+  <input type="text" id="searchInput" placeholder="🔍 Search by Name or EIN..." />
+</div>
+
+<div class="table-container">
+  <table id="responsesTable">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+  <div id="noResults" class="no-results" style="display: none;">No results found.</div>
+</div>
+
+<div class="pagination" id="paginationControls"></div>
+
+<script>
+const sheetUrl = 'https://script.google.com/macros/s/AKfycbxmxIUKA_8V8ouVLc4d_ZvykniMVYKIqlU5GHlcR-oXYYI4NkJjmVFgohEKEbPXTWsV/exec';
+const table = document.getElementById("responsesTable");
+const thead = table.querySelector("thead");
+const tbody = table.querySelector("tbody");
+const searchInput = document.getElementById("searchInput");
+const noResults = document.getElementById("noResults");
+const paginationControls = document.getElementById("paginationControls");
+const mcqKeyContainer = document.getElementById("mcqKeyContainer");
+const showMCQBtn = document.getElementById("showMCQBtn");
+
+let originalData = [];
+let filteredData = [];
+const rowsPerPage = 15;
+let currentPage = 1;
+
+// 25 MCQs
+const mcqs = [
+  {question:"1. What should be checked if a customer's Debit card transaction fails due to insufficient funds?", options:["Bad PIN, IRIS","Expired Card, IRIS","Device Issue","Amount Locked or account Balance, T-24"], answer:"D"},
+  {question:"2. What is indicated when a transaction is declined with the reason 'Bad PIN'?", options:["Session expired","Incorrect PIN entered","Account blocked","Expired card"], answer:"B"},
+  {question:"3. What does a WARM card status indicate?", options:["Blocked permanently","International access enabled","Temporarily Blocked","Verified card"], answer:"C"},
+  {question:"4. Which tool is used to check if an ECOMM session is active?", options:["Admin Portal","Locked Amount Enquiry HM","T24","IRIS"], answer:"D"},
+  {question:"5. If the ECOMM session has never been activated, what will be observed by ACC agent?", options:["Error message","Card expired message","Blank transaction history","Device error"], answer:"C"},
+  {question:"6. What is a common reason for fund transfer failure after password reset?", options:["Card not delivered","Transfer limit not assigned","Device blocked","Wrong CP status"], answer:"B"},
+  {question:"7. Which flag must be enabled to register a device on myABL after the Bio Metric from branch?", options:["BMS Flag","OTP Flag","Device Binding Flag","CP Flag"], answer:"A"},
+  {question:"8. Why would a customer receive a 'Provided information is incorrect' message while registering?", options:["Mobile Number Missing","Account Status Not Active","Already registered on myABL","All of above"], answer:"D"},
+  {question:"9. Which mobile number format is valid for WhatsApp Banking registration?", options:["00092XXXXXXXXX","03XXXXXXXXX","+923XXXXXXXXX","923XXXXXXXXX"], answer:"B"},
+  {question:"10. Why can't users with ID Type – B register for WhatsApp Banking/myABL?", options:["Device limit exceeded","ID type not allowed","Invalid email","Blocked SIM"], answer:"B"},
+  {question:"11. What is the maximum amount that can be sent to a Microfinance Bank in single transaction?", options:["20,000 PKR","25,000 PKR","10,000 PKR","15,000 PKR"], answer:"B"},
+  {question:"12. How many users can log in from the same PC on web?", options:["5","10","Unlimited","15"], answer:"D"},
+  {question:"13. What is the device registration limit for a single user on myABL?", options:["3 devices","5 devices","Unlimited","10 devices"], answer:"B"},
+  {question:"14. Which account type is not eligible for RAAST transfers via Mobile?", options:["Running Finance Account","Joint Account","Saving Account","Current Account"], answer:"A"},
+  {question:"15. For virtual Card creation customer must have?", options:["Debit Card","Credit Card","Virtual Card","PayPak Card"], answer:"A"},
+  {question:"16. What is the requirement for registering WhatsApp Banking registration?", options:["Email verification","Valid mobile number in correct format","ATM PIN reset","NADRA verification"], answer:"B"},
+  {question:"17. Which card status indicates it is temporarily blocked and can be reactivated with customer consent?", options:["Fresh","EXPIRED","HOT","WARM"], answer:"D"},
+  {question:"18. Which field should be checked if a card transaction fails with 'Transaction source not allowed'?", options:["Intern Channel Blocking","BMS Flag","CP View","Account Status"], answer:"A"},
+  {question:"19. What message is likely to appear when a customer attempts RAAST P2P transfer without a proper limit package?", options:["OTP mismatch","Transaction limit reached","Service temporarily unavailable","Limit not found"], answer:"D"},
+  {question:"20. Which of the following must be updated in T-24 for OTP via email to work correctly?", options:["Mobile number","CP Flag","Email address","Fingerprint"], answer:"C"},
+  {question:"21. When does a card typically show 'Remaining Frequency Exceeded' error?", options:["Expired card","Unverified mobile number","Exceeded withdrawal attempts","Limit package mismatch"], answer:"C"},
+  {question:"22. How many users can login on the same device?", options:["2","Unlimited","5","3"], answer:"A"},
+  {question:"23. Which field in T-24 shows if the CP is verified?", options:["Intern Channel Blocking","Email Tab","Manual Transactions","Account Status"], answer:"D"},
+  {question:"24. What happens if a customer logs in from a new device without biometric verification?", options:["User is locked","Device binding fails","Session expires","App auto-resets"], answer:"B"},
+  {question:"25. Is the customer able to create the Virtual Card if his physical card is in HOT state?", options:["Yes","No"], answer:"A"}
+];
+
+// Fetch and display data
+fetch(sheetUrl).then(res=>res.json()).then(data=>{
+  if(!data || data.length===0) return;
+  const [headers,...rows]=data;
+  originalData = rows.map(row=>({
+    date:new Date(row[0]),
+    name:row[1],
+    ein:row[2],
+    score:row[28],
+    answers:row.slice(3,28)
+  }));
+  originalData.sort((a,b)=>b.date-a.date);
+  filteredData = [...originalData];
+
+  thead.innerHTML = `<tr><th>Date</th><th>Name</th><th>EIN</th><th>Score</th><th>Action</th></tr>`;
+  renderPage(currentPage);
+  renderPagination();
+}).catch(err=>{ console.error(err); });
+
+// Format Date
+function formatDate(d){ return d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}); }
+
+// Render table
+function renderPage(page){
+  const start=(page-1)*rowsPerPage;
+  const end=start+rowsPerPage;
+  const pageData=filteredData.slice(start,end);
+  if(pageData.length===0){ tbody.innerHTML=''; noResults.style.display='block'; return; }
+  noResults.style.display='none';
+  tbody.innerHTML='';
+
+  pageData.forEach((row,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${formatDate(row.date)}</td><td>${row.name}</td><td>${row.ein}</td><td>${row.score}</td><td><button data-index="${idx}" class="details-btn">Details</button></td>`;
+    tbody.appendChild(tr);
+
+    const detailsTr=document.createElement('tr');
+    detailsTr.className='details-row';
+    detailsTr.style.display='none';
+
+    const col1 = row.answers.slice(0,13);
+    const col2 = row.answers.slice(13);
+    const detailsHTML = `<div class="details-columns">
+      <div class="details-column">${col1.map((ans,i)=>`<div><span>Q${i+1}:</span> ${ans}</div>`).join('')}</div>
+      <div class="details-column">${col2.map((ans,i)=>`<div><span>Q${i+14}:</span> ${ans}</div>`).join('')}</div>
+    </div>`;
+    detailsTr.innerHTML=`<td colspan="5">${detailsHTML}</td>`;
+    tbody.appendChild(detailsTr);
+  });
+
+  tbody.querySelectorAll('.details-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{ 
+      const rowIndex=parseInt(btn.dataset.index);
+      const detailsTr = tbody.querySelectorAll('.details-row')[rowIndex];
+      detailsTr.style.display = detailsTr.style.display==='none'?'table-row':'none';
+    });
+  });
+}
+
+// Pagination
+function renderPagination(){
+  const totalPages=Math.ceil(filteredData.length/rowsPerPage);
+  paginationControls.innerHTML='';
+  const prevBtn=document.createElement('button'); prevBtn.textContent='Prev'; prevBtn.disabled=currentPage===1; prevBtn.onclick=()=>{currentPage--; renderPage(currentPage); renderPagination();};
+  const nextBtn=document.createElement('button'); nextBtn.textContent='Next'; nextBtn.disabled=currentPage===totalPages; nextBtn.onclick=()=>{currentPage++; renderPage(currentPage); renderPagination();};
+  paginationControls.appendChild(prevBtn);
+  for(let i=1;i<=totalPages;i++){
+    const pageBtn=document.createElement('button'); pageBtn.textContent=i; pageBtn.disabled=i===currentPage; pageBtn.onclick=()=>{currentPage=i; renderPage(currentPage); renderPagination();};
+    paginationControls.appendChild(pageBtn);
+  }
+  paginationControls.appendChild(nextBtn);
+}
+
+// Search
+searchInput.addEventListener('input',()=>{
+  const term=searchInput.value.trim().toLowerCase();
+  filteredData = originalData.filter(r=> (r.name&&r.name.toLowerCase().includes(term)) || (r.ein&&r.ein.toString().includes(term)));
+  currentPage=1;
+  renderPage(currentPage);
+  renderPagination();
+});
+
+// Show MCQs & Answer Key
+showMCQBtn.addEventListener('click',()=>{
+  if(mcqKeyContainer.style.display==='none'){
+    mcqKeyContainer.innerHTML = `<h3>MCQs & Answer Key</h3>${mcqs.map((q,i)=>{
+      const letters=['A','B','C','D'];
+      return `<div><p>${i+1}. ${q.question}</p>${q.options.map((opt,j)=>`<div>${letters[j]}. ${opt}</div>`).join('')}<div><strong>Answer key: ${q.answer}</strong></div></div><hr>`;
+    }).join('')}`;
+    mcqKeyContainer.style.display='block';
+    showMCQBtn.textContent='Hide MCQs & Answer Key';
+  } else {
+    mcqKeyContainer.style.display='none';
+    showMCQBtn.textContent='Show MCQs & Answer Key';
+  }
+});
+</script>
+</body>
+</html>
