@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MCQ Viewer</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #eef2f3, #8e9eab);
+  margin: 0;
+  padding: 20px;
+}
+
+h2 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.loading {
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+}
+
+.card {
+  background: white;
+  padding: 18px 20px;
+  margin: 12px 0;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  transition: 0.3s;
+  border-left: 5px solid #3498db;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+}
+
+.question {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.option {
+  padding: 6px 0;
+  color: #34495e;
+  padding-left: 10px;
+}
+
+.option span {
+  font-weight: bold;
+  color: #3498db;
+}
+
+.answer {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #27ae60;
+  background: #eafaf1;
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+/* small badge for MCQ number */
+.badge {
+  display: inline-block;
+  background: #3498db;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>📘 MCQ Viewer</h2>
+
+<div id="loading" class="loading">Loading MCQs...</div>
+<div class="container" id="container"></div>
+
+<script>
+
+const url = "https://script.google.com/macros/s/AKfycbxcDVN_zV94IEUcN96olpsM3vHvfANvgkueOHhHcsQOwNnXferOrEit3Qqt6UB9pXYQgQ/exec";
+
+fetch(url)
+.then(res => res.json())
+.then(data => {
+
+  const container = document.getElementById("container");
+  let html = "";
+
+  for (let i = 1; i < data.length; i++) {
+
+    let row = data[i];
+
+    html += `
+      <div class="card">
+        <div class="badge">Q${i}</div>
+
+        <div class="question">${row[1]}</div>
+
+        <div class="option"><span>A.</span> ${row[2]}</div>
+        <div class="option"><span>B.</span> ${row[3]}</div>
+        <div class="option"><span>C.</span> ${row[4]}</div>
+        <div class="option"><span>D.</span> ${row[5]}</div>
+
+        <div class="answer">✔ Answer: ${row[6]}</div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+  document.getElementById("loading").style.display = "none";
+
+})
+.catch(err => {
+  document.getElementById("loading").innerText =
+    "❌ Failed to load MCQs";
+  console.error(err);
+});
+
+</script>
+
+</body>
+</html>
