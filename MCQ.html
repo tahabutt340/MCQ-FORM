@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MCQ Test</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(to right, #83a4d4, #b6fbff);
+  margin:0;
+  padding:0;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:100vh;
+}
+
+.container {
+  background:white;
+  padding:30px 25px;
+  margin-top:50px;
+  border-radius:15px;
+  box-shadow:0 8px 16px rgba(0,0,0,0.2);
+  width:100%;
+  max-width:600px;
+}
+
+h2 { text-align:center; color:#2c3e50; }
+
+#timer {
+  text-align:center;
+  font-size:18px;
+  font-weight:bold;
+  color:#e74c3c;
+  margin-bottom:15px;
+}
+
+label {
+  display:block;
+  margin-bottom:10px;
+  font-weight:bold;
+  color:#34495e;
+}
+
+input[type="text"] {
+  width:100%;
+  padding:12px;
+  margin-bottom:20px;
+  border:2px solid #3498db;
+  border-radius:6px;
+  font-size:16px;
+}
+
+.question { margin-bottom:20px; }
+
+.question p {
+  margin-bottom:10px;
+  font-weight:bold;
+  color:#2c3e50;
+}
+
+.question label {
+  font-weight:normal;
+  color:#333;
+  display:block;
+  margin-bottom:5px;
+  padding:8px;
+  border-radius:5px;
+}
+
+button {
+  width:100%;
+  background-color:#3498db;
+  color:white;
+  padding:14px;
+  font-size:16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+button:hover { background-color:#2980b9; }
+
+#statusMessage {
+  margin-top:20px;
+  font-weight:bold;
+  text-align:center;
+}
+
+.success { color:green; }
+.error { color:red; }
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>MCQ Test</h2>
+<div id="timer">Time Remaining: 25:00</div>
+
+<form id="mcqForm">
+
+  <label>Your Name</label>
+  <input type="text" id="name" required />
+
+  <label>EIN</label>
+  <input type="text" id="ein" required />
+
+  <div id="questions-container"></div>
+
+</form>
+
+<div id="statusMessage"></div>
+
+</div>
+
+<script>
+
+const MCQ_URL = "https://script.google.com/macros/s/AKfycbzVOq3yZ2O159Ni9QsiU1XbkDNDmQNH8AkSgh1pL5iViDvmH9e3Kj_GpC53AitoAAm_/exec";
+const RESULT_URL = "https://script.google.com/macros/s/AKfycbyJb92AXnnvflZuBvxGB67z_FzmTPz8-tUK2AIp4ZXFu3IWADuhb1VdltzpllM9uhNz-w/exec";
+
+let questions = [];
+let current = 0;
+const answers = {};
+let shuffled = [];
+
+let isSubmitting = false;
+
+const container = document.getElementById("questions-container");
+const statusEl = document.getElementById("statusMessage");
+const timerEl = document.getElementById("timer");
+
+function normalize(val) {
+  return (val ?? "").toString().trim().toUpperCase();
+}
+
+////////////////////////////////////////////////////
+// SHUFFLE FUNCTION
+////////////////////////////////////////////////////
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+////////////////////////////////////////////////////
+// LOAD MCQs
+////////////////////////////////////////////////////
+fetch(MCQ_URL)
+.then(res => res.json())
+.then(data => {
+
+  shuffled = shuffle(data); // 🔥 RANDOM ORDER EVERY TIME
+  renderQuestion();
+
+})
+.catch(() => {
+  statusEl.innerText = "❌ Failed to load MCQs";
+});
+
+////////////////////////////////////////////////////
+// RENDER QUESTION
+////////////////////////////////////////////////////
+function renderQuestion() {
+
+  const q = shuffled[current];
+
+  container.innerHTML = `
+    <div class="question">
+      <p>${q.question}</p>
+
+      ${q.options.map(opt => `
+        <label>
+          <input type="radio" name="q${current}" value="${opt}">
+          ${opt}
+        </label>
+      `).join("")}
+    </div>
+
+    <button type="button" onclick="next()">Next</button>
+  `;
+}
+
+////////////////////////////////////////////////////
+// NEXT
+////////////////////////////////////////////////////
+function next() {
+
+  const selected = document.querySelector(`input[name="q${current}"]:checked`);
+
+  if (!selected) {
+    alert("Select an option");
+    return;
+  }
+
+  // store answer with ORIGINAL QUESTION ID
+  answers[shuffled[current].id] = selected.value;
+
+  current++;
+
+  if (current < shuffled.length) {
+    renderQuestion();
+  } else {
+    submit();
+  }
+}
+
+////////////////////////////////////////////////////
+// SUBMIT
+////////////////////////////////////////////////////
+function submit() {
+
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  statusEl.innerText = "⏳ Submitting...";
+  statusEl.className = "";
+
+  const name = document.getElementById("name").value;
+  const ein = document.getElementById("ein").value;
+
+  let correct = 0;
+
+  shuffled.forEach(q => {
+
+    const userAns = normalize(answers[q.id]);
+    const correctAns = normalize(q.answer);
+
+    if (userAns === correctAns) {
+      correct++;
+    }
+  });
+
+  const finalScore = correct * 5;
+
+  const data = {
+    name,
+    ein,
+    score: finalScore
+  };
+
+  shuffled.forEach(q => {
+    data["q" + q.id] = answers[q.id] || "";
+  });
+
+  fetch(RESULT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(data)
+  })
+  .then(() => {
+    statusEl.innerText = "✅ Submitted Successfully!";
+    statusEl.className = "success";
+  })
+  .catch(err => {
+    statusEl.innerText = "❌ Error: " + err.message;
+    statusEl.className = "error";
+  });
+}
+
+////////////////////////////////////////////////////
+// TIMER
+////////////////////////////////////////////////////
+let time = 1500;
+
+setInterval(() => {
+  let m = Math.floor(time / 60);
+  let s = time % 60;
+
+  timerEl.innerText = `Time Remaining: ${m}:${s}`;
+
+  time--;
+
+  if (time < 0) submit();
+
+}, 1000);
+
+</script>
+
+</body>
+</html>
