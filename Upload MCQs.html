@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload Excel</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to right, #667eea, #764ba2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.card {
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  width: 400px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.drop-area {
+  border: 2px dashed #aaa;
+  padding: 25px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #667eea;
+  color: #fff;
+}
+
+.progress-container {
+  margin-top: 20px;
+  background: #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  display: none;
+}
+
+.progress-bar {
+  height: 10px;
+  width: 0%;
+  background: #28a745;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🔐 LOGIN CHECK (FIXED) -->
+<script>
+if (localStorage.getItem("loggedIn") !== "true") {
+  window.location.href = "https://tahabutt340.github.io/MCQ-FORM/login.html";
+}
+</script>
+
+<div class="card">
+  <h2>Upload Excel File</h2>
+
+  <div class="drop-area" id="dropArea">
+    Drag & Drop Excel file<br>or click
+    <input type="file" id="file" accept=".xlsx,.xls" hidden>
+  </div>
+
+  <div id="fileName"></div>
+
+  <button id="uploadBtn" onclick="upload()">Upload</button>
+
+  <div class="progress-container" id="progressContainer">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <p id="msg"></p>
+</div>
+
+<script>
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby9oQvh89BHntpyue41Qx50kACzGFsmj3VrGB0zRVoskCMjpwQtW3EBFSe5LYUSlFG5xQ/exec";
+
+const fileInput = document.getElementById("file");
+const dropArea = document.getElementById("dropArea");
+const fileName = document.getElementById("fileName");
+
+dropArea.onclick = () => fileInput.click();
+
+fileInput.addEventListener("change", () => {
+  fileName.innerText = fileInput.files[0]?.name || "";
+});
+
+function upload() {
+  alert("Upload logic runs (your code is OK here)");
+}
+
+</script>
+
+</body>
+</html>
