@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz System</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(to right, #667eea, #764ba2);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* LOGIN BOX */
+.login-box, .portal-box {
+  background: #fff;
+  padding: 30px;
+  border-radius: 15px;
+  width: 350px;
+  text-align: center;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #3498db;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2980b9;
+}
+
+#error {
+  margin-top: 10px;
+  color: red;
+  font-size: 14px;
+}
+
+/* PORTAL BUTTONS */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  border-radius: 10px;
+  color: white;
+  text-decoration: none;
+}
+
+.quiz { background: #3498db; }
+.upload { background: #2ecc71; }
+.viewq { background: #f39c12; }
+.result { background: #e74c3c; }
+
+.btn:hover {
+  opacity: 0.9;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🔐 LOGIN SCREEN -->
+<div id="loginScreen" class="login-box">
+  <h2>Login</h2>
+
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+
+  <button id="loginBtn" onclick="login()">Login</button>
+
+  <div id="error"></div>
+</div>
+
+<!-- 🎯 PORTAL SCREEN -->
+<div id="portalScreen" class="portal-box" style="display:none;">
+  <h2>Quiz Portal</h2>
+
+  <a class="btn quiz" href="https://tahabutt340.github.io/MCQ-FORM/MCQ">Start Quiz</a>
+  <a class="btn upload" href="https://tahabutt340.github.io/MCQ-FORM/Upload%20MCQs">Upload Quiz</a>
+  <a class="btn viewq" href="https://tahabutt340.github.io/MCQ-FORM/MCQS">View Quiz Questions</a>
+  <a class="btn result" href="https://tahabutt340.github.io/MCQ-FORM/front">View Quiz Results</a>
+
+  <button onclick="logout()" style="background:#333;">Logout</button>
+</div>
+
+<script>
+
+// 🔴 YOUR APPS SCRIPT URL
+const API_URL = "https://script.google.com/macros/s/AKfycbx6_7ConiPAdYhK6vVfSghFgyxzmXviT037Pri5ZUwnDvFJjhj-0DXFqzKiK5VpfCGUjg/exec";
+
+/* LOGIN FUNCTION */
+function login() {
+
+  let username = document.getElementById("username").value.trim();
+  let password = document.getElementById("password").value.trim();
+
+  let errorBox = document.getElementById("error");
+  let btn = document.getElementById("loginBtn");
+
+  if (!username || !password) {
+    errorBox.innerText = "Please enter username and password";
+    return;
+  }
+
+  // 🔄 SHOW LOADING STATE
+  errorBox.style.color = "#333";
+  errorBox.innerText = "Checking credentials...";
+  btn.disabled = true;
+  btn.innerText = "Checking...";
+
+  fetch(API_URL, {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "login",
+      username: username,
+      password: password
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if (data.status === "success") {
+
+      localStorage.setItem("loggedIn", "true");
+      showPortal();
+
+    } else {
+      errorBox.style.color = "red";
+      errorBox.innerText = "Invalid username or password";
+    }
+
+  })
+  .catch(() => {
+    errorBox.style.color = "red";
+    errorBox.innerText = "Server error. Try again.";
+  })
+  .finally(() => {
+
+    // 🔄 RESET BUTTON
+    btn.disabled = false;
+    btn.innerText = "Login";
+
+  });
+}
+
+/* SHOW PORTAL */
+function showPortal() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("portalScreen").style.display = "block";
+}
+
+/* LOGOUT */
+function logout() {
+  localStorage.removeItem("loggedIn");
+  location.reload();
+}
+
+/* AUTO LOGIN CHECK */
+window.onload = function() {
+  if (localStorage.getItem("loggedIn") === "true") {
+    showPortal();
+  }
+};
+
+</script>
+
+</body>
+</html>
