@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz System</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(to right, #667eea, #764ba2);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box, .portal-box {
+  background: #fff;
+  padding: 30px;
+  border-radius: 15px;
+  width: 350px;
+  text-align: center;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.password-container {
+  position: relative;
+}
+
+.eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #3498db;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2980b9;
+}
+
+#error {
+  margin-top: 10px;
+  color: red;
+  font-size: 14px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  border-radius: 10px;
+  color: white;
+  text-decoration: none;
+}
+
+.quiz { background: #3498db; }
+.upload { background: #2ecc71; }
+.viewq { background: #f39c12; }
+.result { background: #e74c3c; }
+
+.btn:hover { opacity: 0.9; }
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-box">
+  <h2>Login</h2>
+
+  <input type="text" id="username" placeholder="Username">
+
+  <div class="password-container">
+    <input type="password" id="password" placeholder="Password">
+    <span class="eye" onclick="togglePassword()">👁️</span>
+  </div>
+
+  <button id="loginBtn" onclick="login()">Login</button>
+
+  <div id="error"></div>
+</div>
+
+<!-- PORTAL -->
+<div id="portalScreen" class="portal-box" style="display:none;">
+  <h2>Quiz Portal</h2>
+
+  <a class="btn quiz" href="https://tahabutt340.github.io/MCQ-FORM/MCQ" target="_blank">Start Quiz</a>
+  <a class="btn upload" href="https://tahabutt340.github.io/MCQ-FORM/Upload%20MCQs" target="_blank">Upload Quiz</a>
+  <a class="btn viewq" href="https://tahabutt340.github.io/MCQ-FORM/MCQS" target="_blank">View Quiz Questions</a>
+  <a class="btn result" href="https://tahabutt340.github.io/MCQ-FORM/front" target="_blank">View Quiz Results</a>
+
+  <button onclick="logout()" style="background:#333;">Logout</button>
+</div>
+
+<script>
+
+const API_URL = "https://script.google.com/macros/s/AKfycby_1jd9Dfx745VoBbcb2O3VUPznkYuwRt0kzdTOYQlGnv4qsmeSETxHA70bq4_R6phWRg/exec";
+
+/* 👁️ SHOW PASSWORD */
+function togglePassword() {
+  const pass = document.getElementById("password");
+  pass.type = pass.type === "password" ? "text" : "password";
+}
+
+/* ⌨️ ENTER LOGIN */
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") login();
+});
+
+/* LOGIN */
+function login() {
+
+  let username = document.getElementById("username").value.trim();
+  let password = document.getElementById("password").value.trim();
+
+  let errorBox = document.getElementById("error");
+  let btn = document.getElementById("loginBtn");
+
+  if (!username || !password) {
+    errorBox.innerText = "Enter username & password";
+    return;
+  }
+
+  errorBox.style.color = "#333";
+  errorBox.innerText = "Checking...";
+  btn.disabled = true;
+  btn.innerText = "Checking...";
+
+  fetch(API_URL, {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "login",
+      username,
+      password
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if (data.status === "success") {
+      localStorage.setItem("loggedIn", "true");
+
+      // 🔔 Notify other tabs (login sync)
+      localStorage.setItem("login-event", Date.now());
+
+      showPortal();
+    } else {
+      errorBox.style.color = "red";
+      errorBox.innerText = "Invalid username or password";
+    }
+
+  })
+  .catch(() => {
+    errorBox.style.color = "red";
+    errorBox.innerText = "Server error";
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.innerText = "Login";
+  });
+}
+
+/* SHOW PORTAL */
+function showPortal() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("portalScreen").style.display = "block";
+}
+
+/* LOGOUT (SYNC ALL TABS) */
+function logout() {
+  localStorage.removeItem("loggedIn");
+
+  // 🔔 Notify all tabs
+  localStorage.setItem("logout-event", Date.now());
+
+  location.reload();
+}
+
+/* AUTO LOGIN */
+window.onload = function() {
+  if (localStorage.getItem("loggedIn") === "true") {
+    showPortal();
+  }
+};
+
+/* 🔄 SYNC LOGIN/LOGOUT BETWEEN TABS */
+window.addEventListener("storage", function(e) {
+
+  if (e.key === "logout-event") {
+    localStorage.removeItem("loggedIn");
+    location.reload();
+  }
+
+  if (e.key === "login-event") {
+    showPortal();
+  }
+
+});
+
+</script>
+
+</body>
+</html>
