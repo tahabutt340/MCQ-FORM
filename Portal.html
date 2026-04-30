@@ -119,7 +119,7 @@ button:hover { background: #2980b9; }
 
   <a id="resultBtn" class="btn result" href="https://tahabutt340.github.io/MCQ-FORM/front" target="_blank">View Quiz Results</a>
 
-  <!-- 🔥 ADMIN ONLY BUTTON -->
+  <!-- ADMIN ONLY -->
   <a id="userMgmtBtn" class="btn userMgmt"
      href="https://tahabutt340.github.io/MCQ-FORM/user_management.html"
      target="_blank"
@@ -134,11 +134,21 @@ button:hover { background: #2980b9; }
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwvdjNON0q3ZehFLSuOatl--VUfLysOV4XljgapWPFcUuyXabeSJwH-onDAd56ZX0neCg/exec";
 
-/* TOGGLE PASSWORD */
+/* PASSWORD TOGGLE */
 function togglePassword() {
-  const pass = document.getElementById("password");
+  let pass = document.getElementById("password");
   pass.type = pass.type === "password" ? "text" : "password";
 }
+
+/* ENTER KEY LOGIN */
+document.addEventListener("keydown", function(event) {
+
+  let loginVisible = document.getElementById("loginScreen").style.display !== "none";
+
+  if (event.key === "Enter" && loginVisible) {
+    login();
+  }
+});
 
 /* LOGIN */
 function login() {
@@ -223,7 +233,7 @@ function showPortal(role = localStorage.getItem("userRole")) {
     document.getElementById("viewqBtn").style.display = "block";
     document.getElementById("resultBtn").style.display = "block";
 
-    // 🔥 ADMIN BUTTON
+    // ADMIN BUTTON
     document.getElementById("userMgmtBtn").style.display = "block";
   }
 }
