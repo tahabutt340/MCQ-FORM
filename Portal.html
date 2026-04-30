@@ -47,7 +47,6 @@ input {
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  font-size: 18px;
 }
 
 button {
@@ -62,9 +61,7 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #2980b9;
-}
+button:hover { background: #2980b9; }
 
 #error {
   margin-top: 10px;
@@ -80,12 +77,14 @@ button:hover {
   border-radius: 10px;
   color: white;
   text-decoration: none;
+  text-align: center;
 }
 
 .quiz { background: #3498db; }
 .upload { background: #2ecc71; }
 .viewq { background: #f39c12; }
 .result { background: #e74c3c; }
+.userMgmt { background: #9b59b6; }
 
 .btn:hover { opacity: 0.9; }
 </style>
@@ -105,7 +104,6 @@ button:hover {
   </div>
 
   <button id="loginBtn" onclick="login()">Login</button>
-
   <div id="error"></div>
 </div>
 
@@ -113,28 +111,34 @@ button:hover {
 <div id="portalScreen" class="portal-box" style="display:none;">
   <h2>Quiz Portal</h2>
 
-  <a class="btn quiz" href="https://tahabutt340.github.io/MCQ-FORM/MCQ" target="_blank">Start Quiz</a>
-  <a class="btn upload" href="https://tahabutt340.github.io/MCQ-FORM/Upload%20MCQs" target="_blank">Upload Quiz</a>
-  <a class="btn viewq" href="https://tahabutt340.github.io/MCQ-FORM/MCQS" target="_blank">View Quiz Questions</a>
-  <a class="btn result" href="https://tahabutt340.github.io/MCQ-FORM/front" target="_blank">View Quiz Results</a>
+  <a id="quizBtn" class="btn quiz" href="https://tahabutt340.github.io/MCQ-FORM/MCQ" target="_blank">Start Quiz</a>
+
+  <a id="uploadBtn" class="btn upload" href="https://tahabutt340.github.io/MCQ-FORM/Upload%20MCQs" target="_blank">Upload Quiz</a>
+
+  <a id="viewqBtn" class="btn viewq" href="https://tahabutt340.github.io/MCQ-FORM/MCQS" target="_blank">View Quiz Questions</a>
+
+  <a id="resultBtn" class="btn result" href="https://tahabutt340.github.io/MCQ-FORM/front" target="_blank">View Quiz Results</a>
+
+  <!-- 🔥 ADMIN ONLY BUTTON -->
+  <a id="userMgmtBtn" class="btn userMgmt"
+     href="https://tahabutt340.github.io/MCQ-FORM/user_management.html"
+     target="_blank"
+     style="display:none;">
+     User Management
+  </a>
 
   <button onclick="logout()" style="background:#333;">Logout</button>
 </div>
 
 <script>
 
-const API_URL = "https://script.google.com/macros/s/AKfycby_1jd9Dfx745VoBbcb2O3VUPznkYuwRt0kzdTOYQlGnv4qsmeSETxHA70bq4_R6phWRg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwvdjNON0q3ZehFLSuOatl--VUfLysOV4XljgapWPFcUuyXabeSJwH-onDAd56ZX0neCg/exec";
 
-/* 👁️ SHOW PASSWORD */
+/* TOGGLE PASSWORD */
 function togglePassword() {
   const pass = document.getElementById("password");
   pass.type = pass.type === "password" ? "text" : "password";
 }
-
-/* ⌨️ ENTER LOGIN */
-document.addEventListener("keydown", function(e) {
-  if (e.key === "Enter") login();
-});
 
 /* LOGIN */
 function login() {
@@ -150,10 +154,8 @@ function login() {
     return;
   }
 
-  errorBox.style.color = "#333";
   errorBox.innerText = "Checking...";
   btn.disabled = true;
-  btn.innerText = "Checking...";
 
   fetch(API_URL, {
     method: "POST",
@@ -167,21 +169,16 @@ function login() {
   .then(data => {
 
     if (data.status === "success") {
+
       localStorage.setItem("loggedIn", "true");
+      localStorage.setItem("userRole", data.role);
 
-      // 🔔 Notify other tabs (login sync)
-      localStorage.setItem("login-event", Date.now());
+      showPortal(data.role);
 
-      showPortal();
     } else {
-      errorBox.style.color = "red";
-      errorBox.innerText = "Invalid username or password";
+      errorBox.innerText = "Invalid login";
     }
 
-  })
-  .catch(() => {
-    errorBox.style.color = "red";
-    errorBox.innerText = "Server error";
   })
   .finally(() => {
     btn.disabled = false;
@@ -190,41 +187,59 @@ function login() {
 }
 
 /* SHOW PORTAL */
-function showPortal() {
+function showPortal(role = localStorage.getItem("userRole")) {
+
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("portalScreen").style.display = "block";
+
+  // hide all
+  document.getElementById("quizBtn").style.display = "none";
+  document.getElementById("uploadBtn").style.display = "none";
+  document.getElementById("viewqBtn").style.display = "none";
+  document.getElementById("resultBtn").style.display = "none";
+  document.getElementById("userMgmtBtn").style.display = "none";
+
+  role = Number(role);
+
+  if (role === 0) {
+    alert("No access");
+    logout();
+  }
+
+  else if (role === 1) {
+    document.getElementById("quizBtn").style.display = "block";
+  }
+
+  else if (role === 2) {
+    document.getElementById("quizBtn").style.display = "block";
+    document.getElementById("uploadBtn").style.display = "block";
+    document.getElementById("viewqBtn").style.display = "block";
+    document.getElementById("resultBtn").style.display = "block";
+  }
+
+  else if (role === 3) {
+    document.getElementById("quizBtn").style.display = "block";
+    document.getElementById("uploadBtn").style.display = "block";
+    document.getElementById("viewqBtn").style.display = "block";
+    document.getElementById("resultBtn").style.display = "block";
+
+    // 🔥 ADMIN BUTTON
+    document.getElementById("userMgmtBtn").style.display = "block";
+  }
 }
 
-/* LOGOUT (SYNC ALL TABS) */
+/* LOGOUT */
 function logout() {
-  localStorage.removeItem("loggedIn");
-
-  // 🔔 Notify all tabs
-  localStorage.setItem("logout-event", Date.now());
-
+  localStorage.clear();
   location.reload();
 }
 
 /* AUTO LOGIN */
-window.onload = function() {
+window.onload = function () {
   if (localStorage.getItem("loggedIn") === "true") {
-    showPortal();
+    showPortal(localStorage.getItem("userRole"));
   }
 };
-
-/* 🔄 SYNC LOGIN/LOGOUT BETWEEN TABS */
-window.addEventListener("storage", function(e) {
-
-  if (e.key === "logout-event") {
-    localStorage.removeItem("loggedIn");
-    location.reload();
-  }
-
-  if (e.key === "login-event") {
-    showPortal();
-  }
-
-});
 
 </script>
 
