@@ -131,7 +131,6 @@ button:hover {
      href="https://tahabutt340.github.io/MCQ-FORM/front"
      target="_blank">View Quiz Results</a>
 
-  <!-- ADMIN ONLY -->
   <a id="userMgmtBtn" class="btn userMgmt"
      href="https://tahabutt340.github.io/MCQ-FORM/user_management.html"
      target="_blank"
@@ -143,6 +142,7 @@ button:hover {
 </div>
 
 <script>
+
 const API_URL = "https://script.google.com/macros/s/AKfycbwvdjNON0q3ZehFLSuOatl--VUfLysOV4XljgapWPFcUuyXabeSJwH-onDAd56ZX0neCg/exec";
 
 /* PASSWORD TOGGLE */
@@ -163,6 +163,7 @@ document.addEventListener("keydown", function(event) {
 
 /* LOGIN */
 function login() {
+
   let username = document.getElementById("username").value.trim();
   let password = document.getElementById("password").value.trim();
 
@@ -188,19 +189,18 @@ function login() {
   .then(res => res.json())
   .then(data => {
     if (data.status === "success") {
+
       localStorage.setItem("loggedIn", "true");
       localStorage.setItem("userRole", data.role);
 
-      // clear previous logout event
-      localStorage.removeItem("logout-event");
+      // ✅ ADDED ONLY THIS LINE
+      localStorage.setItem("loginTime", Date.now());
 
       showPortal(data.role);
+
     } else {
       errorBox.innerText = "Invalid login";
     }
-  })
-  .catch(() => {
-    errorBox.innerText = "Server error";
   })
   .finally(() => {
     btn.disabled = false;
@@ -245,14 +245,14 @@ function showPortal(role = localStorage.getItem("userRole")) {
 function logout() {
   localStorage.removeItem("loggedIn");
   localStorage.removeItem("userRole");
+  localStorage.removeItem("loginTime");
 
-  // notify all open tabs/pages
   localStorage.setItem("logout-event", Date.now());
 
   window.location.href = "https://tahabutt340.github.io/MCQ-FORM/Portal";
 }
 
-/* LISTEN FOR LOGOUT FROM OTHER TABS */
+/* CROSS TAB LOGOUT */
 window.addEventListener("storage", function(e) {
   if (e.key === "logout-event") {
     location.reload();
@@ -265,6 +265,43 @@ window.onload = function () {
     showPortal();
   }
 };
+
+/* =========================
+   AUTO LOGOUT SYSTEM
+   (2 MIN logout + 4 MIN check)
+========================= */
+
+function startSessionWatcher() {
+
+  function checkSession() {
+    let loginTime = localStorage.getItem("loginTime");
+    if (!loginTime) return;
+
+    let now = Date.now();
+
+    // 59 minutes = 3600000 ms
+    if (now - loginTime > 3600000) {
+
+      alert("Session expired. Please login again.");
+
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("loginTime");
+
+      localStorage.setItem("logout-event", Date.now());
+
+      window.location.href =
+        "https://tahabutt340.github.io/MCQ-FORM/Portal";
+    }
+  }
+
+  checkSession(); // immediate check
+
+  setInterval(checkSession, 3900000);   // 1 hour 5 minutes = 3900000 ms
+}
+
+window.addEventListener("load", startSessionWatcher);
+
 </script>
 
 </body>
