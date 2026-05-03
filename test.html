@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz System</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(to right, #667eea, #764ba2);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box, .portal-box {
+  background: #fff;
+  padding: 30px;
+  border-radius: 15px;
+  width: 350px;
+  text-align: center;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.password-container {
+  position: relative;
+}
+
+.eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #3498db;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2980b9;
+}
+
+#error {
+  margin-top: 10px;
+  color: red;
+  font-size: 14px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  border-radius: 10px;
+  color: white;
+  text-decoration: none;
+  text-align: center;
+}
+
+.quiz { background: #3498db; }
+.upload { background: #2ecc71; }
+.viewq { background: #f39c12; }
+.result { background: #e74c3c; }
+.userMgmt { background: #9b59b6; }
+
+.btn:hover {
+  opacity: 0.9;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-box">
+  <h2>Login</h2>
+
+  <input type="text" id="username" placeholder="Username">
+
+  <div class="password-container">
+    <input type="password" id="password" placeholder="Password">
+    <span class="eye" onclick="togglePassword()">👁️</span>
+  </div>
+
+  <button id="loginBtn" onclick="login()">Login</button>
+  <div id="error"></div>
+</div>
+
+<!-- PORTAL -->
+<div id="portalScreen" class="portal-box" style="display:none;">
+  <h2>Quiz Portal</h2>
+
+  <a id="quizBtn" class="btn quiz"
+     href="https://tahabutt340.github.io/MCQ-FORM/MCQ"
+     target="_blank">Start Quiz</a>
+
+  <a id="uploadBtn" class="btn upload"
+     href="https://tahabutt340.github.io/MCQ-FORM/Upload%20MCQs"
+     target="_blank">Upload Quiz</a>
+
+  <a id="viewqBtn" class="btn viewq"
+     href="https://tahabutt340.github.io/MCQ-FORM/MCQS"
+     target="_blank">View Quiz Questions</a>
+
+  <a id="resultBtn" class="btn result"
+     href="https://tahabutt340.github.io/MCQ-FORM/front"
+     target="_blank">View Quiz Results</a>
+
+  <a id="userMgmtBtn" class="btn userMgmt"
+     href="https://tahabutt340.github.io/MCQ-FORM/user_management.html"
+     target="_blank"
+     style="display:none;">
+     User Management
+  </a>
+
+  <button onclick="logout()" style="background:#333;">Logout</button>
+</div>
+
+<script>
+
+const API_URL = "https://script.google.com/macros/s/AKfycbwvdjNON0q3ZehFLSuOatl--VUfLysOV4XljgapWPFcUuyXabeSJwH-onDAd56ZX0neCg/exec";
+
+/* PASSWORD TOGGLE */
+function togglePassword() {
+  let pass = document.getElementById("password");
+  pass.type = pass.type === "password" ? "text" : "password";
+}
+
+/* ENTER KEY LOGIN */
+document.addEventListener("keydown", function(event) {
+  let loginVisible =
+    document.getElementById("loginScreen").style.display !== "none";
+
+  if (event.key === "Enter" && loginVisible) {
+    login();
+  }
+});
+
+/* LOGIN */
+function login() {
+
+  let username = document.getElementById("username").value.trim();
+  let password = document.getElementById("password").value.trim();
+
+  let errorBox = document.getElementById("error");
+  let btn = document.getElementById("loginBtn");
+
+  if (!username || !password) {
+    errorBox.innerText = "Enter username & password";
+    return;
+  }
+
+  errorBox.innerText = "Checking...";
+  btn.disabled = true;
+
+  fetch(API_URL, {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "login",
+      username,
+      password
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "success") {
+
+      localStorage.setItem("loggedIn", "true");
+      localStorage.setItem("userRole", data.role);
+
+      // ✅ ADDED ONLY THIS LINE
+      localStorage.setItem("loginTime", Date.now());
+
+      showPortal(data.role);
+
+    } else {
+      errorBox.innerText = "Invalid login";
+    }
+  })
+  .finally(() => {
+    btn.disabled = false;
+  });
+}
+
+/* SHOW PORTAL */
+function showPortal(role = localStorage.getItem("userRole")) {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("portalScreen").style.display = "block";
+
+  document.getElementById("quizBtn").style.display = "none";
+  document.getElementById("uploadBtn").style.display = "none";
+  document.getElementById("viewqBtn").style.display = "none";
+  document.getElementById("resultBtn").style.display = "none";
+  document.getElementById("userMgmtBtn").style.display = "none";
+
+  role = Number(role);
+
+  if (role === 0) {
+    alert("No access");
+    logout();
+    return;
+  }
+
+  if (role >= 1) {
+    document.getElementById("quizBtn").style.display = "block";
+  }
+
+  if (role >= 2) {
+    document.getElementById("uploadBtn").style.display = "block";
+    document.getElementById("viewqBtn").style.display = "block";
+    document.getElementById("resultBtn").style.display = "block";
+  }
+
+  if (role === 3) {
+    document.getElementById("userMgmtBtn").style.display = "block";
+  }
+}
+
+/* LOGOUT */
+function logout() {
+  localStorage.removeItem("loggedIn");
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("loginTime");
+
+  localStorage.setItem("logout-event", Date.now());
+
+  window.location.href = "https://tahabutt340.github.io/MCQ-FORM/Portal";
+}
+
+/* CROSS TAB LOGOUT */
+window.addEventListener("storage", function(e) {
+  if (e.key === "logout-event") {
+    location.reload();
+  }
+});
+
+/* AUTO LOGIN */
+window.onload = function () {
+  if (localStorage.getItem("loggedIn") === "true") {
+    showPortal();
+  }
+};
+
+/* =========================
+   AUTO LOGOUT SYSTEM
+   (2 MIN logout + 4 MIN check)
+========================= */
+
+function startSessionWatcher() {
+
+  function checkSession() {
+    let loginTime = localStorage.getItem("loginTime");
+    if (!loginTime) return;
+
+    let now = Date.now();
+
+    // 2 minutes = 120000 ms
+    if (now - loginTime > 120000) {
+
+      alert("Session expired (2 minutes). Please login again.");
+
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("loginTime");
+
+      localStorage.setItem("logout-event", Date.now());
+
+      window.location.href =
+        "https://tahabutt340.github.io/MCQ-FORM/Portal";
+    }
+  }
+
+  checkSession(); // immediate check
+
+  setInterval(checkSession, 240000); // every 4 minutes
+}
+
+window.addEventListener("load", startSessionWatcher);
+
+</script>
+
+</body>
+</html>
