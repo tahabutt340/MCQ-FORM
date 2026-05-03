@@ -131,7 +131,6 @@ button:hover {
      href="https://tahabutt340.github.io/MCQ-FORM/front"
      target="_blank">View Quiz Results</a>
 
-  <!-- ADMIN ONLY -->
   <a id="userMgmtBtn" class="btn userMgmt"
      href="https://tahabutt340.github.io/MCQ-FORM/user_management.html"
      target="_blank"
@@ -143,6 +142,7 @@ button:hover {
 </div>
 
 <script>
+
 const API_URL = "https://script.google.com/macros/s/AKfycbwvdjNON0q3ZehFLSuOatl--VUfLysOV4XljgapWPFcUuyXabeSJwH-onDAd56ZX0neCg/exec";
 
 /* PASSWORD TOGGLE */
@@ -151,7 +151,7 @@ function togglePassword() {
   pass.type = pass.type === "password" ? "text" : "password";
 }
 
-/* ENTER KEY LOGIN */
+/* ENTER LOGIN */
 document.addEventListener("keydown", function(event) {
   let loginVisible =
     document.getElementById("loginScreen").style.display !== "none";
@@ -163,6 +163,7 @@ document.addEventListener("keydown", function(event) {
 
 /* LOGIN */
 function login() {
+
   let username = document.getElementById("username").value.trim();
   let password = document.getElementById("password").value.trim();
 
@@ -187,20 +188,20 @@ function login() {
   })
   .then(res => res.json())
   .then(data => {
+
     if (data.status === "success") {
+
       localStorage.setItem("loggedIn", "true");
       localStorage.setItem("userRole", data.role);
-
-      // clear previous logout event
-      localStorage.removeItem("logout-event");
+      localStorage.setItem("username", username);
+      localStorage.setItem("loginTime", Date.now());
 
       showPortal(data.role);
+
     } else {
       errorBox.innerText = "Invalid login";
     }
-  })
-  .catch(() => {
-    errorBox.innerText = "Server error";
+
   })
   .finally(() => {
     btn.disabled = false;
@@ -209,6 +210,7 @@ function login() {
 
 /* SHOW PORTAL */
 function showPortal(role = localStorage.getItem("userRole")) {
+
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("portalScreen").style.display = "block";
 
@@ -219,12 +221,6 @@ function showPortal(role = localStorage.getItem("userRole")) {
   document.getElementById("userMgmtBtn").style.display = "none";
 
   role = Number(role);
-
-  if (role === 0) {
-    alert("No access");
-    logout();
-    return;
-  }
 
   if (role >= 1) {
     document.getElementById("quizBtn").style.display = "block";
@@ -243,28 +239,41 @@ function showPortal(role = localStorage.getItem("userRole")) {
 
 /* LOGOUT */
 function logout() {
-  localStorage.removeItem("loggedIn");
-  localStorage.removeItem("userRole");
-
-  // notify all open tabs/pages
-  localStorage.setItem("logout-event", Date.now());
-
+  localStorage.clear();
   window.location.href = "https://tahabutt340.github.io/MCQ-FORM/Portal";
 }
 
-/* LISTEN FOR LOGOUT FROM OTHER TABS */
-window.addEventListener("storage", function(e) {
-  if (e.key === "logout-event") {
-    location.reload();
+/* =========================
+   AUTO LOGOUT (2 MINUTES)
+========================= */
+function startAutoLogout() {
+
+  function check() {
+    let loginTime = parseInt(localStorage.getItem("loginTime"));
+    let now = Date.now();
+
+    // 2 minutes = 120000 ms
+    if (now - loginTime > 120000) {
+      alert("Session expired (2 minutes). Please login again.");
+      logout();
+    }
   }
-});
+
+  check();
+
+  // background check every 4 minutes
+  setInterval(check, 240000);
+}
+
+window.addEventListener("load", startAutoLogout);
 
 /* AUTO LOGIN */
 window.onload = function () {
   if (localStorage.getItem("loggedIn") === "true") {
-    showPortal();
+    showPortal(localStorage.getItem("userRole"));
   }
 };
+
 </script>
 
 </body>
