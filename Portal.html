@@ -61,7 +61,9 @@ button {
   cursor: pointer;
 }
 
-button:hover { background: #2980b9; }
+button:hover {
+  background: #2980b9;
+}
 
 #error {
   margin-top: 10px;
@@ -86,7 +88,9 @@ button:hover { background: #2980b9; }
 .result { background: #e74c3c; }
 .userMgmt { background: #9b59b6; }
 
-.btn:hover { opacity: 0.9; }
+.btn:hover {
+  opacity: 0.9;
+}
 </style>
 </head>
 
@@ -111,13 +115,21 @@ button:hover { background: #2980b9; }
 <div id="portalScreen" class="portal-box" style="display:none;">
   <h2>Quiz Portal</h2>
 
-  <a id="quizBtn" class="btn quiz" href="https://tahabutt340.github.io/MCQ-FORM/MCQ" target="_blank">Start Quiz</a>
+  <a id="quizBtn" class="btn quiz"
+     href="https://tahabutt340.github.io/MCQ-FORM/MCQ"
+     target="_blank">Start Quiz</a>
 
-  <a id="uploadBtn" class="btn upload" href="https://tahabutt340.github.io/MCQ-FORM/Upload%20MCQs" target="_blank">Upload Quiz</a>
+  <a id="uploadBtn" class="btn upload"
+     href="https://tahabutt340.github.io/MCQ-FORM/Upload%20MCQs"
+     target="_blank">Upload Quiz</a>
 
-  <a id="viewqBtn" class="btn viewq" href="https://tahabutt340.github.io/MCQ-FORM/MCQS" target="_blank">View Quiz Questions</a>
+  <a id="viewqBtn" class="btn viewq"
+     href="https://tahabutt340.github.io/MCQ-FORM/MCQS"
+     target="_blank">View Quiz Questions</a>
 
-  <a id="resultBtn" class="btn result" href="https://tahabutt340.github.io/MCQ-FORM/front" target="_blank">View Quiz Results</a>
+  <a id="resultBtn" class="btn result"
+     href="https://tahabutt340.github.io/MCQ-FORM/front"
+     target="_blank">View Quiz Results</a>
 
   <!-- ADMIN ONLY -->
   <a id="userMgmtBtn" class="btn userMgmt"
@@ -131,7 +143,6 @@ button:hover { background: #2980b9; }
 </div>
 
 <script>
-
 const API_URL = "https://script.google.com/macros/s/AKfycbwvdjNON0q3ZehFLSuOatl--VUfLysOV4XljgapWPFcUuyXabeSJwH-onDAd56ZX0neCg/exec";
 
 /* PASSWORD TOGGLE */
@@ -142,8 +153,8 @@ function togglePassword() {
 
 /* ENTER KEY LOGIN */
 document.addEventListener("keydown", function(event) {
-
-  let loginVisible = document.getElementById("loginScreen").style.display !== "none";
+  let loginVisible =
+    document.getElementById("loginScreen").style.display !== "none";
 
   if (event.key === "Enter" && loginVisible) {
     login();
@@ -152,7 +163,6 @@ document.addEventListener("keydown", function(event) {
 
 /* LOGIN */
 function login() {
-
   let username = document.getElementById("username").value.trim();
   let password = document.getElementById("password").value.trim();
 
@@ -177,32 +187,31 @@ function login() {
   })
   .then(res => res.json())
   .then(data => {
-
     if (data.status === "success") {
-
       localStorage.setItem("loggedIn", "true");
       localStorage.setItem("userRole", data.role);
 
-      showPortal(data.role);
+      // clear previous logout event
+      localStorage.removeItem("logout-event");
 
+      showPortal(data.role);
     } else {
       errorBox.innerText = "Invalid login";
     }
-
+  })
+  .catch(() => {
+    errorBox.innerText = "Server error";
   })
   .finally(() => {
     btn.disabled = false;
-    btn.innerText = "Login";
   });
 }
 
 /* SHOW PORTAL */
 function showPortal(role = localStorage.getItem("userRole")) {
-
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("portalScreen").style.display = "block";
 
-  // hide all
   document.getElementById("quizBtn").style.display = "none";
   document.getElementById("uploadBtn").style.display = "none";
   document.getElementById("viewqBtn").style.display = "none";
@@ -214,43 +223,48 @@ function showPortal(role = localStorage.getItem("userRole")) {
   if (role === 0) {
     alert("No access");
     logout();
+    return;
   }
 
-  else if (role === 1) {
+  if (role >= 1) {
     document.getElementById("quizBtn").style.display = "block";
   }
 
-  else if (role === 2) {
-    document.getElementById("quizBtn").style.display = "block";
+  if (role >= 2) {
     document.getElementById("uploadBtn").style.display = "block";
     document.getElementById("viewqBtn").style.display = "block";
     document.getElementById("resultBtn").style.display = "block";
   }
 
-  else if (role === 3) {
-    document.getElementById("quizBtn").style.display = "block";
-    document.getElementById("uploadBtn").style.display = "block";
-    document.getElementById("viewqBtn").style.display = "block";
-    document.getElementById("resultBtn").style.display = "block";
-
-    // ADMIN BUTTON
+  if (role === 3) {
     document.getElementById("userMgmtBtn").style.display = "block";
   }
 }
 
 /* LOGOUT */
 function logout() {
-  localStorage.clear();
-  location.reload();
+  localStorage.removeItem("loggedIn");
+  localStorage.removeItem("userRole");
+
+  // notify all open tabs/pages
+  localStorage.setItem("logout-event", Date.now());
+
+  window.location.href = "https://tahabutt340.github.io/MCQ-FORM/Portal";
 }
+
+/* LISTEN FOR LOGOUT FROM OTHER TABS */
+window.addEventListener("storage", function(e) {
+  if (e.key === "logout-event") {
+    location.reload();
+  }
+});
 
 /* AUTO LOGIN */
 window.onload = function () {
   if (localStorage.getItem("loggedIn") === "true") {
-    showPortal(localStorage.getItem("userRole"));
+    showPortal();
   }
 };
-
 </script>
 
 </body>
