@@ -143,6 +143,10 @@ button:hover {
 
 <script>
 
+const BASE_PATH = window.location.pathname.includes("MCQ-FORM")
+  ? "/MCQ-FORM/"
+  : "/";
+
 const API_URL = "https://script.google.com/macros/s/AKfycbwvdjNON0q3ZehFLSuOatl--VUfLysOV4XljgapWPFcUuyXabeSJwH-onDAd56ZX0neCg/exec";
 
 /* PASSWORD TOGGLE */
@@ -249,7 +253,7 @@ function logout() {
 
   localStorage.setItem("logout-event", Date.now());
 
-  window.location.href = "/";
+  window.location.href = BASE_PATH;
 }
 
 /* CROSS TAB LOGOUT */
@@ -290,7 +294,7 @@ function startSessionWatcher() {
 
       localStorage.setItem("logout-event", Date.now());
 
-        window.location.href = "/";
+       window.location.href = BASE_PATH;
 
     }
   }
